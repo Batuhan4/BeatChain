@@ -1,20 +1,79 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as Tone from 'tone';
+
+// --- Helper function to convert AudioBuffer to WAV ---
+const audioBufferToWav = (buffer: AudioBuffer): Blob => {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const bufferArray = new ArrayBuffer(length);
+  const view = new DataView(bufferArray);
+  const channels = [];
+  let i = 0;
+  let sample = 0;
+  let offset = 0;
+  let pos = 0;
+
+  // write WAVE header
+  setUint32(0x46464952); // "RIFF"
+  setUint32(length - 8); // file length - 8
+  setUint32(0x45564157); // "WAVE"
+
+  setUint32(0x20746d66); // "fmt " chunk
+  setUint32(16); // length = 16
+  setUint16(1); // PCM (uncompressed)
+  setUint16(numOfChan);
+  setUint32(buffer.sampleRate);
+  setUint32(buffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
+  setUint16(numOfChan * 2); // block-align
+  setUint16(16); // 16-bit (hardcoded in this demo)
+
+  setUint32(0x61746164); // "data" - chunk
+  setUint32(length - pos - 4); // chunk length
+
+  // write interleaved data
+  for (i = 0; i < buffer.numberOfChannels; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
+
+  while (pos < length) {
+    for (i = 0; i < numOfChan; i++) {
+      // interleave channels
+      sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+      sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0; // scale to 16-bit signed int
+      view.setInt16(pos, sample, true); // write 16-bit sample
+      pos += 2;
+    }
+    offset++; // next source sample
+  }
+
+  return new Blob([view], { type: 'audio/wav' });
+
+  function setUint16(data: number) {
+    view.setUint16(pos, data, true);
+    pos += 2;
+  }
+
+  function setUint32(data: number) {
+    view.setUint32(pos, data, true);
+    pos += 4;
+  }
+};
+
 
 // --- Constants ---
 const NUM_STEPS = 16; // 16 steps for a 4-second loop at 120 BPM
+const DURATION_SECONDS = 4;
 const NUM_TRACKS = 6;
 const SAMPLE_NAMES = ['Kick', 'Snare', 'Hi-Hat', 'Clap', 'Cowbell', 'Tom'];
 
 // --- Tone.js Setup ---
-// Using a ref to ensure Tone.js objects are not re-created on every render
 const useTonePlayers = () => {
   const players = useRef<Tone.Players | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // This setup runs once on component mount
     players.current = new Tone.Players({
       urls: {
         Kick: '/samples/kick.wav',
@@ -26,58 +85,43 @@ const useTonePlayers = () => {
       },
       baseUrl: 'https://tonejs.github.io/audio/drum-samples/acoustic-kit/',
       onload: () => {
+        setIsLoaded(true);
         console.log('Samples loaded');
       },
     }).toDestination();
 
-    // Cleanup on unmount
-    return () => {
-      players.current?.dispose();
-    };
+    return () => players.current?.dispose();
   }, []);
 
-  return players;
+  return { players, isLoaded };
 };
 
 // --- Sequencer Component ---
-const Sequencer = () => {
-  const [grid, setGrid] = useState(() =>
-    Array(NUM_TRACKS)
-      .fill(null)
-      .map(() => Array(NUM_STEPS).fill(false))
-  );
+const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
+  const [grid, setGrid] = useState(() => Array(NUM_TRACKS).fill(null).map(() => Array(NUM_STEPS).fill(false)));
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const players = useTonePlayers();
-  const stepRef = useRef(currentStep);
+  const [isRendering, setIsRendering] = useState(false);
+  const { players, isLoaded } = useTonePlayers();
 
-  // Function to toggle a step in the grid
   const toggleStep = (trackIndex: number, stepIndex: number) => {
     const newGrid = grid.map((track, i) =>
-      i === trackIndex
-        ? track.map((step, j) => (j === stepIndex ? !step : step))
-        : track
+      i === trackIndex ? track.map((step, j) => (j === stepIndex ? !step : step)) : track
     );
     setGrid(newGrid);
   };
 
-  // Effect to handle playback scheduling
   useEffect(() => {
-    stepRef.current = currentStep;
-  }, [currentStep]);
-
-  useEffect(() => {
+    if (!isLoaded) return;
     const loop = new Tone.Sequence(
       (time, step) => {
-        // This callback is invoked for each step of the sequence
         grid.forEach((track, trackIndex) => {
           if (track[step] && players.current) {
             const sampleName = SAMPLE_NAMES[trackIndex];
             players.current.player(sampleName).start(time);
           }
         });
-        // Update UI to show current step
-        setCurrentStep(step);
+        Tone.Draw.schedule(() => setCurrentStep(step), time);
       },
       Array.from({ length: NUM_STEPS }, (_, i) => i),
       '16n'
@@ -87,35 +131,77 @@ const Sequencer = () => {
       loop.dispose();
       setCurrentStep(0);
     };
-  }, [grid, players]);
+  }, [grid, players, isLoaded]);
 
-  // Function to start/stop playback
   const togglePlayback = async () => {
-    if (Tone.context.state !== 'running') {
-      await Tone.start();
-    }
-
+    if (!isLoaded) return;
+    if (Tone.context.state !== 'running') await Tone.start();
     if (isPlaying) {
       Tone.Transport.stop();
       setIsPlaying(false);
-      setCurrentStep(0);
     } else {
       Tone.Transport.start();
       setIsPlaying(true);
     }
   };
 
+  const handleExport = useCallback(async () => {
+    if (!isLoaded || !players.current) return;
+    setIsRendering(true);
+    
+    // Stop playback to render offline
+    if (isPlaying) {
+      Tone.Transport.stop();
+      setIsPlaying(false);
+    }
+
+    try {
+      const buffer = await Tone.Offline(({ transport }) => {
+        const offlinePlayers = new Tone.Players({
+          urls: {
+            Kick: '/samples/kick.wav', Snare: '/samples/snare.wav', 'Hi-Hat': '/samples/hihat.wav',
+            Clap: '/samples/clap.wav', Cowbell: '/samples/cowbell.wav', Tom: '/samples/tom.wav',
+          },
+          baseUrl: 'https://tonejs.github.io/audio/drum-samples/acoustic-kit/',
+        }).toDestination();
+
+        const loop = new Tone.Sequence(
+          (time, step) => {
+            grid.forEach((track, trackIndex) => {
+              if (track[step]) {
+                const sampleName = SAMPLE_NAMES[trackIndex];
+                offlinePlayers.player(sampleName).start(time);
+              }
+            });
+          },
+          Array.from({ length: NUM_STEPS }, (_, i) => i),
+          '16n'
+        ).start(0);
+        
+        transport.start();
+      }, DURATION_SECONDS);
+
+      const wavBlob = audioBufferToWav(buffer);
+      onExport(wavBlob);
+
+    } catch (error) {
+      console.error("Error rendering audio:", error);
+    } finally {
+      setIsRendering(false);
+    }
+  }, [isLoaded, players, grid, isPlaying, onExport]);
+
   return (
     <div className="bg-gray-900 p-4 md:p-8 rounded-lg shadow-lg border border-orange-500/30">
       <div className="grid grid-cols-16 gap-1 md:gap-2">
-        {grid.map((track, trackIndex) => (
+        {SAMPLE_NAMES.map((name, trackIndex) => (
           <React.Fragment key={trackIndex}>
-            {track.map((step, stepIndex) => (
+            {grid[trackIndex].map((step, stepIndex) => (
               <div
                 key={`${trackIndex}-${stepIndex}`}
                 onClick={() => toggleStep(trackIndex, stepIndex)}
-                className={`w-6 h-10 md:w-10 md:h-16 rounded cursor-pointer transition-all duration-150
-                  ${stepIndex === currentStep && isPlaying ? 'bg-orange-400 scale-105' : ''}
+                className={`w-full h-12 md:h-16 rounded cursor-pointer transition-all duration-150 border-2
+                  ${stepIndex === currentStep && isPlaying ? 'border-orange-400 scale-105' : 'border-transparent'}
                   ${step ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}
                 `}
               />
@@ -123,14 +209,23 @@ const Sequencer = () => {
           </React.Fragment>
         ))}
       </div>
-      <div className="mt-6 flex justify-center">
+      <div className="mt-6 flex justify-center items-center space-x-4">
         <button
           onClick={togglePlayback}
-          className="bg-orange-600 text-white font-bold py-3 px-8 rounded-full hover:bg-orange-500 transition-colors"
+          disabled={!isLoaded || isRendering}
+          className="bg-orange-600 text-white font-bold py-3 px-8 rounded-full hover:bg-orange-500 transition-colors disabled:bg-gray-500"
         >
           {isPlaying ? 'Stop' : 'Play'}
         </button>
+        <button
+          onClick={handleExport}
+          disabled={!isLoaded || isRendering}
+          className="bg-green-600 text-white font-bold py-3 px-8 rounded-full hover:bg-green-500 transition-colors disabled:bg-gray-500"
+        >
+          {isRendering ? 'Rendering...' : 'Export WAV'}
+        </button>
       </div>
+      {!isLoaded && <p className="text-center mt-4 text-gray-400">Loading Samples...</p>}
     </div>
   );
 };
