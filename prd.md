@@ -46,8 +46,56 @@ Our vision is to create a fully on-chain creative protocol where digital music i
 * Must have a public `startBeat(string memory segmentCID)` function that creates a new Beat and records the first contributor.
 * Must have a public `addSegment(uint256 beatId, string memory segmentCID)` function that allows a new user to add their segment's IPFS CID.
 * Must have a public `mint(uint256 beatId)` function that allows a user to mint a *completed* Beat as an NFT.
-* The NFT's `tokenURI` must point to a mein-progress Beats and "Mint this Beat!" for completed ones.
+* The NFT's `tokenURI` must point to a metadata JSON file (also on IPFS) that includes the final audio and the list of creators.
+
+**FR-2: Sequencer & Web App**
+* The interface must provide a pre-defined library of 5-6 audio samples.
+* The interface must feature a grid-based, 4-second timeline.
+* The app must render the user's arrangement into an audio file on the client-side.
+
+**FR-3: Backend Service (Off-Chain Helper)**
+* The backend's primary role is to upload audio files to **Pinata** and return the IPFS CID to the frontend.
+* It will also be used to combine the three audio segments into a final track, upload *that* to Pinata, and generate the final metadata JSON for the NFT.
+
+**FR-4: Farcaster Frame Integration**
+* The Frame's state must be driven by data read from the smart contract.
+* It must display "Continue the Beat!" for in-progress Beats and "Mint this Beat!" for completed ones.
 
 **FR-5: Completed Track Page**
 * Must display an audio player for the final 12-second track.
 * Must display the Farcaster wallet addresses of the 3 contributors by reading them from the smart contract.
+* Must feature a "Mint NFT" button that initiates the minting transaction via Wagmi.
+
+### 6. Technical Requirements & Stack
+
+* **Frontend:**
+    * **Framework:** `Vite + React + TypeScript`.
+    * **Wallet Connection:** `Wagmi`. Used to get the user's address and to prompt them to sign all required smart contract transactions.
+    * **Web Audio Library:** `Tone.js`. For client-side audio sequencing and rendering.
+    * **Farcaster Frames Library:** `Frames.js` or `Frog`.
+
+* **Smart Contract:**
+    * **Blockchain:** `Base`.
+    * **Language:** `Solidity`.
+    * **Development Environment:** `Foundry` or `Hardhat`.
+    * **NFT Standard:** `ERC-721`.
+
+* **Storage (Decentralized):**
+    * **Service:** `Pinata`. To store all audio segments, the final combined audio track, and the NFT metadata JSON files via IPFS.
+
+* **Backend (Helper Service):**
+    * **Runtime & Deployment:** `Node.js` deployed as **Serverless Functions** (e.g., on Vercel).
+    * **SDKs:** `Pinata SDK` for uploading files.
+
+### 7. Design & Theme
+
+* **Platform:** This will be a mobile-first application. The design must be responsive and optimized for mobile devices.
+* **Theme:** The application will have a black and orange cyberpunk theme. Additional colors can be used to complement this theme.
+
+### 8. Out of Scope for MVP (Future Roadmap)
+
+* **Royalty Splits:** The smart contract will not automatically split minting fees or secondary sales royalties among the three creators.
+* **Marketplace:** There will be no built-in marketplace to trade BeatChain NFTs. Users will use platforms like OpenSea.
+* **DAO Governance:** The platform will not be governed by a DAO in the MVP.
+* Advanced social features, user profiles, or leaderboards.
+* Adding new sound packs or uploading custom sounds.
