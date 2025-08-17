@@ -45,21 +45,21 @@ const BeatCard = ({ beatId }: { beatId: bigint }) => {
   }
 
   const isCompleted = beat.status === BeatStatus.Completed;
-  const cardColor = isCompleted ? 'border-green-500/50' : 'border-yellow-500/50';
+  const cardColor = isCompleted ? 'border-cyber-blue/50' : 'border-cyber-orange/50';
 
   return (
     <Link href={`/beat/${beat.id.toString()}`}>
-      <div className={`bg-gray-900/50 p-4 rounded-lg border ${cardColor} hover:bg-gray-800 transition-colors`}>
+      <div className={`bg-black/30 p-4 rounded-lg border ${cardColor} hover:bg-gray-900/80 transition-colors`}>
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-2xl font-bold text-orange-500">Beat #{beat.id.toString()}</h3>
-          <span className={`text-sm font-bold ${isCompleted ? 'text-green-500' : 'text-yellow-500'}`}>
+          <h3 className="text-2xl font-bold text-cyber-orange">Beat #{beat.id.toString()}</h3>
+          <span className={`text-sm font-bold ${isCompleted ? 'text-cyber-blue' : 'text-yellow-500'}`}>
             {BeatStatus[beat.status]}
           </span>
         </div>
         <p className="text-gray-400">
           {beat.segmentCount} / 3 Segments
         </p>
-        {beat.isMinted && <p className="text-purple-400 text-xs mt-1">Minted NFT</p>}
+        {beat.isMinted && <p className="text-cyber-purple text-xs mt-1 font-bold">Minted NFT</p>}
       </div>
     </Link>
   );
@@ -73,18 +73,18 @@ const TracksPage = () => {
   // The ideal solution is to add `_beatIdCounter.current()` to the contract as a public view function.
   const MOCK_TOTAL_BEATS = 5; // Simulate 5 beats having been created
 
-  const beatIds = Array.from({ length: MOCK_TOTAL_BEATS }, (_, i) => BigInt(i + 1));
+  const beatIds = Array.from({ length: MOCK_TOTAL_BEATS }, (_, i) => BigInt(i + 1)).reverse(); // Show newest first
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-orange-500 mb-2">All Tracks</h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-cyber-orange mb-2">All Beats</h1>
         <p className="text-lg text-gray-400">
-          Explore all the in-progress and completed beats on-chain.
+          Explore all on-chain beats. Click one to contribute or mint.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {beatIds.map(id => (
           <BeatCard key={id.toString()} beatId={id} />
         ))}

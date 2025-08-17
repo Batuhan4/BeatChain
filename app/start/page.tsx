@@ -87,21 +87,21 @@ const StartBeatPage = () => {
       <div className="mt-8 text-center">
         {audioBlob && (
           <div className="mb-4">
-            <p className="text-green-500">Audio exported successfully!</p>
+            <p className="text-cyber-blue">Audio exported successfully!</p>
             <button 
               onClick={handleStartBeat}
               disabled={isUploading || isPending || isConfirming}
-              className="bg-green-600 text-white font-bold py-3 px-10 rounded-full hover:bg-green-500 transition-colors text-xl disabled:bg-gray-500 mt-2"
+              className="bg-cyber-blue text-black font-bold py-3 px-10 rounded-md hover:bg-blue-300 transition-colors text-lg disabled:bg-gray-600 mt-2"
             >
-              {isUploading ? 'Uploading...' : isPending ? 'Confirm in wallet...' : isConfirming ? 'Writing to chain...' : 'Start Beat On-Chain'}
+              {isUploading ? 'Uploading to IPFS...' : isPending ? 'Confirm in wallet...' : isConfirming ? 'Writing to chain...' : 'Start Beat On-Chain'}
             </button>
           </div>
         )}
-        {isConfirmed && <p className="text-green-500">Success! Your Beat is on-chain.</p>}
+        {isConfirmed && <p className="text-green-500 mt-4">Success! Your Beat is on-chain. Redirecting...</p>}
         {error && (
-          <div className="text-red-500 mt-2">
-            <p>Error: {error.shortMessage || error.message}</p>
-            <p>Note: This will fail until a valid contract address is provided.</p>
+          <div className="text-red-500 mt-4 bg-red-500/10 p-3 rounded-md">
+            <p className="font-bold">Error:</p>
+            <p className="text-sm">{error.shortMessage || error.message}</p>
           </div>
         )}
       </div>

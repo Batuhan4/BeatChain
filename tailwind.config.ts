@@ -11,6 +11,9 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        'cyber-orange': '#FF8C00',
+        'cyber-blue': '#00FFFF',
+        'cyber-purple': '#BE00FF',
       },
       animation: {
         "fade-out": "1s fadeOut 3s ease-out forwards",

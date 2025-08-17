@@ -192,49 +192,56 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
   }, [isLoaded, players, grid, isPlaying, onExport]);
 
   return (
-    <div className="bg-gray-900 p-2 md:p-6 rounded-lg shadow-lg border border-orange-500/30">
-      <div className="flex gap-1 md:gap-2">
-        <div className="flex flex-col gap-1 md:gap-2 w-16 md:w-24">
+    <div className="bg-black/30 p-2 md:p-6 rounded-lg shadow-lg border border-cyber-orange/30 w-full">
+      <div className="flex gap-2">
+        {/* Sample Labels */}
+        <div className="hidden md:flex flex-col gap-1 md:gap-2 w-24">
           {SAMPLE_NAMES.map((name) => (
-            <div key={name} className="bg-gray-800 rounded flex items-center justify-center h-10 md:h-12 text-xs md:text-sm text-orange-400">
+            <div key={name} className="bg-gray-800/50 rounded flex items-center justify-center h-12 text-sm text-cyber-orange">
               {name}
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-16 flex-1 gap-1 md:gap-2">
-          {grid.map((track, trackIndex) => (
-            <React.Fragment key={trackIndex}>
-              {track.map((step, stepIndex) => (
-                <div
-                  key={`${trackIndex}-${stepIndex}`}
-                  onClick={() => toggleStep(trackIndex, stepIndex)}
-                  className={`w-full h-10 md:h-12 rounded cursor-pointer transition-all duration-150 border-2
-                    ${stepIndex === currentStep && isPlaying ? 'border-orange-400 scale-105' : 'border-transparent'}
-                    ${step ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'}
-                  `}
-                />
-              ))}
-            </React.Fragment>
-          ))}
+
+        {/* Sequencer Grid */}
+        <div className="flex-1 overflow-x-auto">
+          <div className="grid grid-cols-16 gap-1 md:gap-2 min-w-[480px]">
+            {grid.map((track, trackIndex) => (
+              <React.Fragment key={trackIndex}>
+                {track.map((step, stepIndex) => (
+                  <div
+                    key={`${trackIndex}-${stepIndex}`}
+                    onClick={() => toggleStep(trackIndex, stepIndex)}
+                    className={`w-full h-12 rounded cursor-pointer transition-all duration-150 border-2
+                      ${stepIndex === currentStep && isPlaying ? 'border-cyber-blue scale-105' : 'border-transparent'}
+                      ${step ? 'bg-cyber-orange' : 'bg-gray-700/50 hover:bg-gray-600/50'}
+                    `}
+                  />
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       </div>
+
+      {/* Controls */}
       <div className="mt-6 flex justify-center items-center space-x-4">
         <button
           onClick={togglePlayback}
           disabled={!isLoaded || isRendering}
-          className="bg-orange-600 text-white font-bold py-3 px-8 rounded-full hover:bg-orange-500 transition-colors disabled:bg-gray-500"
+          className="bg-cyber-orange text-black font-bold py-3 px-8 rounded-md hover:bg-orange-400 transition-colors disabled:bg-gray-600"
         >
           {isPlaying ? 'Stop' : 'Play'}
         </button>
         <button
           onClick={handleExport}
           disabled={!isLoaded || isRendering}
-          className="bg-green-600 text-white font-bold py-3 px-8 rounded-full hover:bg-green-500 transition-colors disabled:bg-gray-500"
+          className="bg-cyber-blue text-black font-bold py-3 px-8 rounded-md hover:bg-blue-300 transition-colors disabled:bg-gray-600"
         >
           {isRendering ? 'Rendering...' : 'Export WAV'}
         </button>
       </div>
-      {!isLoaded && <p className="text-center mt-4 text-gray-400">Loading Samples...</p>}
+      {!isLoaded && <p className="text-center mt-4 text-gray-400 animate-pulse">Loading Samples...</p>}
     </div>
   );
 };

@@ -5,12 +5,15 @@
 @layer base {
   body {
     @apply bg-black text-gray-200;
-    background-image: radial-gradient(circle at 1px 1px, #ff8c0020 1px, transparent 0);
-    background-size: 20px 20px;
-    font-family: 'Courier New', Courier, monospace;
+    /* Add a subtle grid background for the cyberpunk feel */
+    background-image: 
+      linear-gradient(to right, theme('colors.cyber-orange / 0.1') 1px, transparent 1px),
+      linear-gradient(to bottom, theme('colors.cyber-orange / 0.1') 1px, transparent 1px);
+    background-size: 2rem 2rem;
+    font-family: 'Roboto Mono', monospace;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold text-orange-500;
+    @apply font-bold text-cyber-orange;
   }
 }
