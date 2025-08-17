@@ -12,7 +12,7 @@ const Home = () => {
       </p>
       <Link
         href="/tracks"
-        className="bg-blue-500 text-white px-6 py-3 rounded-full text-lg font-bold"
+        className="bg-cyber-orange text-black px-8 py-3 rounded-md text-lg font-bold hover:bg-orange-400 transition-colors"
       >
         Explore Tracks
       </Link>
