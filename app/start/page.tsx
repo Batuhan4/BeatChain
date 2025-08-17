@@ -36,20 +36,40 @@ const StartBeatPage = () => {
     }
 
     setIsUploading(true);
-    
-    // --- Mock Backend Upload ---
-    console.log('Simulating upload to Pinata...');
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-    const mockCid = 'QmPlaceholderCidForNewBeat';
-    console.log('Mock CID received:', mockCid);
-    setIsUploading(false);
-    // --- End Mock ---
+    let cid = '';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'beat-segment.wav');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+      
+      cid = data.cid;
+      console.log('Successfully uploaded to Pinata. CID:', cid);
+
+    } catch (uploadError) {
+      console.error(uploadError);
+      alert(`Error uploading to IPFS: ${uploadError.message}`);
+      setIsUploading(false);
+      return;
+    } finally {
+      setIsUploading(false);
+    }
 
     // Call the smart contract
     writeContract({
       ...contractConfig,
       functionName: 'startBeat',
-      args: [mockCid],
+      args: [cid],
     });
   };
 

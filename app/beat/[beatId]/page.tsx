@@ -53,15 +53,36 @@ const BeatPage = () => {
 
   const handleAddSegment = async (blob: Blob) => {
     setIsUploading(true);
-    console.log('Simulating upload for addSegment...');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const mockCid = `QmPlaceholderCidForSegment${beat?.segmentCount || 0 + 1}`;
-    setIsUploading(false);
+    let cid = '';
+
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, 'beat-segment.wav');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Upload failed');
+      
+      cid = data.cid;
+      console.log('Segment uploaded. CID:', cid);
+
+    } catch (uploadError) {
+      console.error(uploadError);
+      alert(`Error uploading to IPFS: ${uploadError.message}`);
+      setIsUploading(false);
+      return;
+    } finally {
+      setIsUploading(false);
+    }
 
     writeContract({
       ...contractConfig,
       functionName: 'addSegment',
-      args: [beatId, mockCid],
+      args: [beatId, cid],
     });
   };
 
