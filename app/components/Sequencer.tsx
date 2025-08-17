@@ -83,7 +83,7 @@ const useTonePlayers = () => {
         Cowbell: '/samples/cowbell.wav',
         Tom: '/samples/tom.wav',
       },
-      baseUrl: 'https://tonejs.github.io/audio/drum-samples/acoustic-kit/',
+      baseUrl: '/',
       onload: () => {
         setIsLoaded(true);
         console.log('Samples loaded');
