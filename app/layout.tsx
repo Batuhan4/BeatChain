@@ -44,10 +44,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="bg-background flex flex-col min-h-screen">
+      <body className="min-h-screen">
         <Providers>
           <Header />
-          <main className="flex-grow">{children}</main>
+          <main>{children}</main>
           <Footer />
         </Providers>
       </body>

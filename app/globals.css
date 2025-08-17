@@ -2,24 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #111111;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #111111;
-    --foreground: #ffffff;
+@layer base {
+  body {
+    @apply bg-black text-gray-200;
+    background-image: radial-gradient(circle at 1px 1px, #ff8c0020 1px, transparent 0);
+    background-size: 20px 20px;
+    font-family: 'Courier New', Courier, monospace;
   }
-}
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: "Geist", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 80%;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-orange-500;
+  }
 }
