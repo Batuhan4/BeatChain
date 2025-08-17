@@ -19,15 +19,26 @@ type Beat = {
 
 // --- BeatCard Component ---
 const BeatCard = ({ beatId }: { beatId: bigint }) => {
-  const { data: beat, isLoading, error } = useReadContract({
+  const { data: beatData, isLoading, error } = useReadContract({
     ...contractConfig,
     functionName: 'beats',
     args: [beatId],
-  }) as { data: Beat, isLoading: boolean, error: Error | null };
+  });
 
   if (isLoading) {
     return <div className="bg-gray-800 p-4 rounded-lg animate-pulse h-36"></div>;
   }
+
+  // Manually construct the Beat object from the returned tuple
+  const beat: Beat | null = beatData ? {
+    id: (beatData as any[])[0],
+    status: (beatData as any[])[1],
+    // contributors and segmentCIDs are nested arrays in the tuple
+    contributors: (beatData as any[])[2], 
+    segmentCIDs: (beatData as any[])[3],
+    segmentCount: (beatData as any[])[4],
+    isMinted: (beatData as any[])[5],
+  } : null;
 
   if (error || !beat || beat.id === 0n) {
     return <div className="bg-gray-800 p-4 rounded-lg border border-red-500/50">Error loading Beat #{beatId.toString()}</div>;
