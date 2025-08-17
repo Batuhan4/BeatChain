@@ -1,66 +1,27 @@
-# MiniKit Template
+# BeatChain
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-onchain --mini`](), configured with:
-
-- [MiniKit](https://docs.base.org/builderkits/minikit/overview)
-- [OnchainKit](https://www.base.org/builders/onchainkit)
-- [Tailwind CSS](https://tailwindcss.com)
-- [Next.js](https://nextjs.org/docs)
+BeatChain is a decentralized music platform that allows artists to upload their music and get paid directly by their fans. It is built on top of the Base blockchain and uses Farcaster for social features.
 
 ## Getting Started
 
-1. Install dependencies:
+1. Clone the repository:
 ```bash
-npm install
-# or
-yarn install
-# or
+git clone https://github.com/Batuhan4/BeatChain.git
+```
+
+2. Install dependencies:
+```bash
 pnpm install
-# or
-bun install
 ```
 
-2. Verify environment variables, these will be set up by the `npx create-onchain --mini` command:
-
-You can regenerate the FARCASTER Account Association environment variables by running `npx create-onchain --manifest` in your project directory.
-
-The environment variables enable the following features:
-
-- Frame metadata - Sets up the Frame Embed that will be shown when you cast your frame
-- Account association - Allows users to add your frame to their account, enables notifications
-- Redis API keys - Enable Webhooks and background notifications for your application by storing users notification details
-
+3. Set up your environment variables:
 ```bash
-# Shared/OnchainKit variables
-NEXT_PUBLIC_ONCHAINKIT_PROJECT_NAME=
-NEXT_PUBLIC_URL=
-NEXT_PUBLIC_ICON_URL=
-NEXT_PUBLIC_ONCHAINKIT_API_KEY=
-
-# Frame metadata
-FARCASTER_HEADER=
-FARCASTER_PAYLOAD=
-FARCASTER_SIGNATURE=
-NEXT_PUBLIC_APP_ICON=
-NEXT_PUBLIC_APP_SUBTITLE=
-NEXT_PUBLIC_APP_DESCRIPTION=
-NEXT_PUBLIC_APP_SPLASH_IMAGE=
-NEXT_PUBLIC_SPLASH_BACKGROUND_COLOR=
-NEXT_PUBLIC_APP_PRIMARY_CATEGORY=
-NEXT_PUBLIC_APP_HERO_IMAGE=
-NEXT_PUBLIC_APP_TAGLINE=
-NEXT_PUBLIC_APP_OG_TITLE=
-NEXT_PUBLIC_APP_OG_DESCRIPTION=
-NEXT_PUBLIC_APP_OG_IMAGE=
-
-# Redis config
-REDIS_URL=
-REDIS_TOKEN=
+cp .env.example .env
 ```
 
-3. Start the development server:
+4. Start the development server:
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ## Template Features

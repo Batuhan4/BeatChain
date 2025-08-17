@@ -1,6 +1,8 @@
 {
   "name": "beatchain",
   "version": "0.1.0",
+  "description": "A decentralized music platform.",
+  "author": "Batuhan",
   "private": true,
   "scripts": {
     "dev": "next dev",
