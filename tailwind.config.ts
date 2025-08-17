@@ -21,6 +21,9 @@ const config: Config = {
           "100%": { opacity: "0" },
         },
       },
+      gridTemplateColumns: {
+        '16': 'repeat(16, minmax(0, 1fr))',
+      }
     },
   },
   plugins: [],

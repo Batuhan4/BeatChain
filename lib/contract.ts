@@ -2,7 +2,7 @@ import { getAbiItem } from 'viem';
 import abi from './abi.json';
 
 // TODO: Replace with your deployed contract address
-export const contractAddress = '0x...'; 
+export const contractAddress = '0xB25FC5Fd210058C96bc78593Cb29aC0e8642849e'; 
 
 export const contractConfig = {
   address: contractAddress,
