@@ -65,8 +65,8 @@ const audioBufferToWav = (buffer: AudioBuffer): Blob => {
 // --- Constants ---
 const NUM_STEPS = 16; // 16 steps for a 4-second loop at 120 BPM
 const DURATION_SECONDS = 4;
-const NUM_TRACKS = 6;
-const SAMPLE_NAMES = ['Kick', 'Snare', 'Hi-Hat', 'Clap', 'Cowbell', 'Tom'];
+const NUM_TRACKS = 5;
+const SAMPLE_NAMES = ['Kick', 'Snare', 'Hi-Hat', 'Clap', 'Cowbell'];
 
 // --- Tone.js Setup ---
 const useTonePlayers = () => {
@@ -81,7 +81,6 @@ const useTonePlayers = () => {
         'Hi-Hat': '/samples/hihat.wav',
         Clap: '/samples/clap.wav',
         Cowbell: '/samples/cowbell.wav',
-        Tom: '/samples/tom.wav',
       },
       baseUrl: '/',
       onload: () => {
@@ -160,9 +159,9 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
         const offlinePlayers = new Tone.Players({
           urls: {
             Kick: '/samples/kick.wav', Snare: '/samples/snare.wav', 'Hi-Hat': '/samples/hihat.wav',
-            Clap: '/samples/clap.wav', Cowbell: '/samples/cowbell.wav', Tom: '/samples/tom.wav',
+            Clap: '/samples/clap.wav', Cowbell: '/samples/cowbell.wav',
           },
-          baseUrl: 'https://tonejs.github.io/audio/drum-samples/acoustic-kit/',
+          baseUrl: '/',
         }).toDestination();
 
         const loop = new Tone.Sequence(
