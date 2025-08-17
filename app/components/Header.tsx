@@ -24,6 +24,9 @@ const Header = () => {
           <li>
             <Link href="/profile">Profile</Link>
           </li>
+          <li>
+            <Link href="/settings">Settings</Link>
+          </li>
         </ul>
       </nav>
     </header>
