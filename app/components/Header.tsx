@@ -21,6 +21,9 @@ const Header = () => {
           <li>
             <Link href="/upload">Upload</Link>
           </li>
+          <li>
+            <Link href="/profile">Profile</Link>
+          </li>
         </ul>
       </nav>
     </header>
