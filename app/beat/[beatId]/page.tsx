@@ -86,17 +86,42 @@ const BeatPage = () => {
     });
   };
 
-  const handleMint = async (blob: Blob) => {
+  const handleMint = async () => {
+    if (!beat) return;
+
     setIsUploading(true);
-    console.log('Simulating final metadata upload for mint...');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    const mockMetadataCid = 'QmPlaceholderForFinalMetadata';
-    setIsUploading(false);
+    let metadataCID = '';
+
+    try {
+      const response = await fetch('/api/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          beatId: beat.id.toString(),
+          segmentCIDs: beat.segmentCIDs,
+          contributors: beat.contributors,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Finalization failed');
+      
+      metadataCID = data.metadataCID;
+      console.log('Final metadata uploaded. CID:', metadataCID);
+
+    } catch (uploadError) {
+      console.error(uploadError);
+      alert(`Error finalizing beat: ${uploadError.message}`);
+      setIsUploading(false);
+      return;
+    } finally {
+      setIsUploading(false);
+    }
 
     writeContract({
       ...contractConfig,
       functionName: 'mint',
-      args: [beatId, mockMetadataCid],
+      args: [beatId, metadataCID],
     });
   };
 
