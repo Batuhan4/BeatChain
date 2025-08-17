@@ -12,6 +12,9 @@ const Header = () => {
           <li>
             <Link href="/about">About</Link>
           </li>
+          <li>
+            <Link href="/artists">Artists</Link>
+          </li>
         </ul>
       </nav>
     </header>
