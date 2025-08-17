@@ -120,20 +120,20 @@ const BeatPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-cyber-orange mb-2">
+        <h1 className="text-3xl md:text-5xl font-bold text-cyber-orange mb-2 break-words">
           Beat #{beat.id.toString()}
         </h1>
         <p className="text-lg text-gray-400">
           Status: <span className={isCompleted ? 'text-cyber-blue' : 'text-yellow-500'}>{BeatStatus[beat.status]}</span>
-          {beat.isMinted && <span className="text-cyber-purple ml-2">(Minted as NFT)</span>}
+          {beat.isMinted && <span className="text-cyber-purple ml-2">(Minted)</span>}
         </p>
       </div>
 
       <div className="bg-black/30 p-4 md:p-6 rounded-lg border border-cyber-orange/30 mb-8 max-w-2xl mx-auto">
-        <h3 className="text-2xl mb-4">Contributors</h3>
+        <h3 className="text-xl md:text-2xl mb-4">Contributors</h3>
         <div className="flex flex-col space-y-2">
           {beat.contributors.map((c, i) => c !== '0x0000000000000000000000000000000000000000' && (
-            <div key={i} className="bg-gray-800/50 p-3 rounded font-mono text-sm truncate">
+            <div key={i} className="bg-gray-800/50 p-3 rounded font-mono text-xs md:text-sm truncate">
               <span className="text-cyber-orange mr-2">#{i + 1}:</span> {c}
             </div>
           ))}
@@ -142,19 +142,19 @@ const BeatPage = () => {
 
       {isCompleted ? (
         <div className="text-center">
-          <h2 className="text-3xl mb-4">Beat Completed!</h2>
+          <h2 className="text-2xl md:text-3xl mb-4">Beat Completed!</h2>
           <p className="text-gray-400 mb-6">This masterpiece is ready to be minted as a permanent NFT.</p>
           <button 
             onClick={handleMint}
             disabled={beat.isMinted || isPending || isConfirming || isUploading}
-            className="bg-cyber-purple text-white font-bold py-3 px-10 rounded-md hover:bg-purple-500 transition-colors text-xl disabled:bg-gray-600"
+            className="bg-cyber-purple text-white font-bold py-3 px-10 rounded-md hover:bg-purple-500 transition-colors text-lg md:text-xl disabled:bg-gray-600 w-full md:w-auto"
           >
             {beat.isMinted ? 'Already Minted' : isUploading ? 'Finalizing...' : isPending ? 'Confirm...' : isConfirming ? 'Minting...' : 'Mint NFT'}
           </button>
         </div>
       ) : (
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl text-center mb-4">Add Your 4-Second Segment</h2>
+          <h2 className="text-2xl md:text-3xl text-center mb-4">Add Your 4-Second Segment</h2>
           <Sequencer onExport={handleExportedAudio} />
         </div>
       )}

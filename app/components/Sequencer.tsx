@@ -212,7 +212,7 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
                   <div
                     key={`${trackIndex}-${stepIndex}`}
                     onClick={() => toggleStep(trackIndex, stepIndex)}
-                    className={`w-full h-12 rounded cursor-pointer transition-all duration-150 border-2
+                    className={`w-full h-14 md:h-12 rounded cursor-pointer transition-all duration-150 border-2
                       ${stepIndex === currentStep && isPlaying ? 'border-cyber-blue scale-105' : 'border-transparent'}
                       ${step ? 'bg-cyber-orange' : 'bg-gray-700/50 hover:bg-gray-600/50'}
                     `}

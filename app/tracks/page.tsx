@@ -48,15 +48,15 @@ const BeatCard = ({ beatId }: { beatId: bigint }) => {
   const cardColor = isCompleted ? 'border-cyber-blue/50' : 'border-cyber-orange/50';
 
   return (
-    <Link href={`/beat/${beat.id.toString()}`}>
-      <div className={`bg-black/30 p-4 rounded-lg border ${cardColor} hover:bg-gray-900/80 transition-colors`}>
+    <Link href={`/beat/${beat.id.toString()}`} className="block">
+      <div className={`bg-black/30 p-4 rounded-lg border ${cardColor} hover:bg-gray-900/80 transition-colors h-full`}>
         <div className="flex justify-between items-center mb-2">
-          <h3 className="text-2xl font-bold text-cyber-orange">Beat #{beat.id.toString()}</h3>
-          <span className={`text-sm font-bold ${isCompleted ? 'text-cyber-blue' : 'text-yellow-500'}`}>
+          <h3 className="text-xl md:text-2xl font-bold text-cyber-orange">Beat #{beat.id.toString()}</h3>
+          <span className={`text-xs md:text-sm font-bold px-2 py-1 rounded-md ${isCompleted ? 'bg-cyber-blue/20 text-cyber-blue' : 'bg-yellow-500/20 text-yellow-500'}`}>
             {BeatStatus[beat.status]}
           </span>
         </div>
-        <p className="text-gray-400">
+        <p className="text-gray-400 text-sm md:text-base">
           {beat.segmentCount} / 3 Segments
         </p>
         {beat.isMinted && <p className="text-cyber-purple text-xs mt-1 font-bold">Minted NFT</p>}
