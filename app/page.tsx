@@ -1,9 +1,14 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 const Home = () => {
+  useEffect(() => {
+    sdk.actions.ready();
+  }, []);
+
   return (
     <div className="container mx-auto px-4 py-12 md:py-24 text-center">
       <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
