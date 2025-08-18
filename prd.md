@@ -1,5 +1,3 @@
-Elbette. İstekleriniz doğrultusunda, projenin vizyonunu tam on-chain bir yapıya taşıyan, Pinata ve Base Smart Contract mimarisini temel alan yeni ve eksiksiz PRD'yi hazırladım.
-
 ---
 
 ### **BeatChain - Product Requirements Document (On-Chain Version)**

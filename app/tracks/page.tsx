@@ -6,21 +6,15 @@ import { useReadContract } from 'wagmi';
 import { contractConfig } from '../../lib/contract';
 import { Address } from 'viem';
 
-// --- Types ---
-enum BeatStatus { InProgress, Completed }
-type Beat = {
-  id: bigint;
-  status: BeatStatus;
-  contributors: Address[];
-  segmentCIDs: string[];
-  segmentCount: number;
-  isMinted: boolean;
-};
+import { BeatStatus, BeatData } from '../../lib/types';
+
+type BeatTuple = [bigint, BeatStatus, Address[], string[], number, boolean];
 
 // --- BeatCard Component ---
 const BeatCard = ({ beatId }: { beatId: bigint }) => {
   const { data: beatData, isLoading, error } = useReadContract({
-    ...contractConfig,
+    address: contractConfig.address,
+    abi: contractConfig.abi,
     functionName: 'beats',
     args: [beatId],
   });
@@ -30,14 +24,14 @@ const BeatCard = ({ beatId }: { beatId: bigint }) => {
   }
 
   // Manually construct the Beat object from the returned tuple
-  const beat: Beat | null = beatData ? {
-    id: (beatData as any[])[0],
-    status: (beatData as any[])[1],
+  const beat: BeatData | null = beatData ? {
+    id: (beatData as BeatTuple)[0],
+    status: (beatData as BeatTuple)[1],
     // contributors and segmentCIDs are nested arrays in the tuple
-    contributors: (beatData as any[])[2], 
-    segmentCIDs: (beatData as any[])[3],
-    segmentCount: (beatData as any[])[4],
-    isMinted: (beatData as any[])[5],
+    contributors: (beatData as BeatTuple)[2], 
+    segmentCIDs: (beatData as BeatTuple)[3],
+    segmentCount: (beatData as BeatTuple)[4],
+    isMinted: (beatData as BeatTuple)[5],
   } : null;
 
   if (error || !beat || beat.id === 0n) {
@@ -68,12 +62,21 @@ const BeatCard = ({ beatId }: { beatId: bigint }) => {
 
 // --- Tracks Page ---
 const TracksPage = () => {
-  // NOTE: The current contract doesn't have a way to get the total number of beats.
-  // This is a crucial feature for this page. I am simulating it with a hardcoded value.
-  // The ideal solution is to add `_beatIdCounter.current()` to the contract as a public view function.
-  const MOCK_TOTAL_BEATS = 5; // Simulate 5 beats having been created
+  const { data: totalBeats, isLoading, error } = useReadContract({
+    ...contractConfig,
+    functionName: 'getTotalBeats',
+  });
 
-  const beatIds = Array.from({ length: MOCK_TOTAL_BEATS }, (_, i) => BigInt(i + 1)).reverse(); // Show newest first
+  if (isLoading) {
+    return <div className="text-center p-10 animate-pulse">Loading total beats...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center p-10 text-red-500">Error loading beats: {error.message}</div>;
+  }
+
+  const totalBeatsNum = totalBeats ? Number(totalBeats) : 0;
+  const beatIds = Array.from({ length: totalBeatsNum }, (_, i) => BigInt(i + 1)).reverse();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -84,11 +87,15 @@ const TracksPage = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {beatIds.map(id => (
-          <BeatCard key={id.toString()} beatId={id} />
-        ))}
-      </div>
+      {beatIds.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {beatIds.map(id => (
+            <BeatCard key={id.toString()} beatId={id} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-center text-gray-500">No beats have been created yet.</p>
+      )}
     </div>
   );
 };

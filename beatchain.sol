@@ -33,7 +33,7 @@ contract BeatChain is ERC721 {
     mapping(uint256 => Beat) public beats;
     
     // Hangi NFT ID'sinin hangi Beat'e ait olduğunu takip eden mapping.
-    mapping(uint256 => uint256) public tokenIdToBeadId;
+    mapping(uint256 => uint256) public tokenIdToBeatId;
 
     // NFT metadata URI'lerini saklayan mapping.
     mapping(uint256 => string) private _tokenURIs;
@@ -45,7 +45,9 @@ contract BeatChain is ERC721 {
     event BeatMinted(uint256 indexed beatId, uint256 indexed tokenId, address minter);
 
     // Kontrat oluşturulduğunda ERC721 standardına göre NFT'nin adını ve sembolünü belirler.
-    constructor() ERC721("BeatChain", "BEAT") {}
+    constructor() ERC721("BeatChain", "BEAT") {
+        _tokenIdCounter.increment();
+    }
 
     /**
      * @notice Yeni bir Beat başlatır.
@@ -74,13 +76,23 @@ contract BeatChain is ERC721 {
      * @param _segmentCID Yeni ses segmentinin IPFS CID'si.
      */
     function addSegment(uint256 _beatId, string memory _segmentCID) public {
+        require(_beatId <= _beatIdCounter.current(), "BeatChain: Beat ID does not exist.");
         require(bytes(_segmentCID).length > 0, "BeatChain: Segment CID cannot be empty.");
         
         Beat storage currentBeat = beats[_beatId];
 
-        require(currentBeat.id != 0, "BeatChain: Beat does not exist.");
-        require(currentBeat.status == Status.InProgress, "BeatChain: Beat is already completed.");
-        require(currentBeat.contributors[0] != msg.sender && currentBeat.contributors[1] != msg.sender, "BeatChain: You have already contributed to this Beat.");
+        require(currentBeat.id != 0, "BeatChain: Beat with this ID does not exist.");
+        require(currentBeat.segmentCount < 3, "BeatChain: Beat already has maximum segments.");
+        require(currentBeat.status == Status.InProgress, "BeatChain: Beat is already completed and cannot be modified.");
+        
+        bool isAlreadyContributor = false;
+        for (uint8 i = 0; i < currentBeat.segmentCount; i++) {
+            if (currentBeat.contributors[i] == msg.sender) {
+                isAlreadyContributor = true;
+                break;
+            }
+        }
+        require(!isAlreadyContributor, "BeatChain: You have already contributed to this Beat.");
 
         uint8 currentSegmentIndex = currentBeat.segmentCount;
         currentBeat.contributors[currentSegmentIndex] = msg.sender;
@@ -101,11 +113,12 @@ contract BeatChain is ERC721 {
      * @param _metadataCID Backend tarafından oluşturulan metadata JSON dosyasının IPFS CID'si.
      */
     function mint(uint256 _beatId, string memory _metadataCID) public {
+        require(_beatId <= _beatIdCounter.current(), "BeatChain: Beat ID does not exist.");
         require(bytes(_metadataCID).length > 0, "BeatChain: Metadata CID cannot be empty.");
 
         Beat storage currentBeat = beats[_beatId];
 
-        require(currentBeat.id != 0, "BeatChain: Beat does not exist.");
+        require(currentBeat.id != 0, "BeatChain: Beat with this ID does not exist.");
         require(currentBeat.status == Status.Completed, "BeatChain: Beat is not completed yet.");
         require(!currentBeat.isMinted, "BeatChain: This Beat has already been minted.");
 
@@ -114,10 +127,9 @@ contract BeatChain is ERC721 {
         _tokenIdCounter.increment();
         uint256 newTokenId = _tokenIdCounter.current();
         
-        tokenIdToBeadId[newTokenId] = _beatId;
+        tokenIdToBeatId[newTokenId] = _beatId;
         
-        string memory finalTokenURI = string(abi.encodePacked("ipfs://", _metadataCID));
-        _tokenURIs[newTokenId] = finalTokenURI;
+        _tokenURIs[newTokenId] = string(abi.encodePacked("ipfs://", _metadataCID));
 
         _safeMint(msg.sender, newTokenId);
         
@@ -133,5 +145,21 @@ contract BeatChain is ERC721 {
         require(bytes(uri).length > 0, "ERC721Metadata: URI query for nonexistent token");
         
         return uri;
+    }
+
+    function getTotalBeats() public view returns (uint256) {
+        return _beatIdCounter.current();
+    }
+
+    function getBeatDetails(uint256 _beatId) public view returns (
+        uint256 id,
+        Status status,
+        address[3] memory contributors,
+        string[3] memory segmentCIDs,
+        uint8 segmentCount,
+        bool isMinted
+    ) {
+        Beat storage beat = beats[_beatId];
+        return (beat.id, beat.status, beat.contributors, beat.segmentCIDs, beat.segmentCount, beat.isMinted);
     }
 }

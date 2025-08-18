@@ -4,9 +4,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as Tone from 'tone';
 
 // --- Helper function to convert AudioBuffer to WAV ---
-const audioBufferToWav = (buffer: AudioBuffer): Blob => {
-  const numOfChan = buffer.numberOfChannels;
-  const length = buffer.length * numOfChan * 2 + 44;
+const audioBufferToWav = (buffer: Tone.ToneAudioBuffer): Blob => {
+  const audioBuffer = buffer.get() as AudioBuffer;
+  const numOfChan = audioBuffer.numberOfChannels;
+  const length = audioBuffer.length * numOfChan * 2 + 44;
   const bufferArray = new ArrayBuffer(length);
   const view = new DataView(bufferArray);
   const channels = [];
@@ -24,8 +25,8 @@ const audioBufferToWav = (buffer: AudioBuffer): Blob => {
   setUint32(16); // length = 16
   setUint16(1); // PCM (uncompressed)
   setUint16(numOfChan);
-  setUint32(buffer.sampleRate);
-  setUint32(buffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
+  setUint32(audioBuffer.sampleRate);
+  setUint32(audioBuffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
   setUint16(numOfChan * 2); // block-align
   setUint16(16); // 16-bit (hardcoded in this demo)
 
@@ -33,8 +34,8 @@ const audioBufferToWav = (buffer: AudioBuffer): Blob => {
   setUint32(length - pos - 4); // chunk length
 
   // write interleaved data
-  for (i = 0; i < buffer.numberOfChannels; i++) {
-    channels.push(buffer.getChannelData(i));
+  for (i = 0; i < audioBuffer.numberOfChannels; i++) {
+    channels.push(audioBuffer.getChannelData(i));
   }
 
   while (pos < length) {
@@ -67,32 +68,12 @@ const NUM_STEPS = 16; // 16 steps for a 4-second loop at 120 BPM
 const DURATION_SECONDS = 4;
 const NUM_TRACKS = 5;
 const SAMPLE_NAMES = ['Kick', 'Snare', 'Hi-Hat', 'Clap', 'Cowbell'];
-
-// --- Tone.js Setup ---
-const useTonePlayers = () => {
-  const players = useRef<Tone.Players | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    players.current = new Tone.Players({
-      urls: {
-        Kick: '/samples/kick.wav',
-        Snare: '/samples/snare.wav',
-        'Hi-Hat': '/samples/hihat.wav',
-        Clap: '/samples/clap.wav',
-        Cowbell: '/samples/cowbell.wav',
-      },
-      baseUrl: '/',
-      onload: () => {
-        setIsLoaded(true);
-        console.log('Samples loaded');
-      },
-    }).toDestination();
-
-    return () => players.current?.dispose();
-  }, []);
-
-  return { players, isLoaded };
+const SAMPLE_URLS = {
+  Kick: '/samples/kick.wav',
+  Snare: '/samples/snare.wav',
+  'Hi-Hat': '/samples/hi-hat.wav',
+  Clap: '/samples/clap.wav',
+  Cowbell: '/samples/cowbell.wav',
 };
 
 // --- Sequencer Component ---
@@ -101,20 +82,37 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isRendering, setIsRendering] = useState(false);
-  const { players, isLoaded } = useTonePlayers();
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const toggleStep = (trackIndex: number, stepIndex: number) => {
-    const newGrid = grid.map((track, i) =>
-      i === trackIndex ? track.map((step, j) => (j === stepIndex ? !step : step)) : track
-    );
-    setGrid(newGrid);
-  };
+  const players = useRef<Tone.Players | null>(null);
+  const sequence = useRef<Tone.Sequence | null>(null);
+  const gridRef = useRef(grid);
+
+  useEffect(() => {
+    gridRef.current = grid;
+  }, [grid]);
+
+  useEffect(() => {
+    players.current = new Tone.Players({
+      urls: SAMPLE_URLS,
+      onload: () => {
+        setIsLoaded(true);
+        console.log('Samples loaded');
+      },
+    }).toDestination();
+
+    return () => {
+      players.current?.dispose();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
-    const loop = new Tone.Sequence(
+
+    sequence.current = new Tone.Sequence(
       (time, step) => {
-        grid.forEach((track, trackIndex) => {
+        const currentGrid = gridRef.current;
+        currentGrid.forEach((track, trackIndex) => {
           if (track[step] && players.current) {
             const sampleName = SAMPLE_NAMES[trackIndex];
             players.current.player(sampleName).start(time);
@@ -127,10 +125,17 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
     ).start(0);
 
     return () => {
-      loop.dispose();
+      sequence.current?.dispose();
       setCurrentStep(0);
     };
-  }, [grid, players, isLoaded]);
+  }, [isLoaded]);
+
+  const toggleStep = (trackIndex: number, stepIndex: number) => {
+    const newGrid = grid.map((track, i) =>
+      i === trackIndex ? track.map((step, j) => (j === stepIndex ? !step : step)) : track
+    );
+    setGrid(newGrid);
+  };
 
   const togglePlayback = async () => {
     if (!isLoaded) return;
@@ -148,7 +153,6 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
     if (!isLoaded || !players.current) return;
     setIsRendering(true);
     
-    // Stop playback to render offline
     if (isPlaying) {
       Tone.Transport.stop();
       setIsPlaying(false);
@@ -157,14 +161,10 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
     try {
       const buffer = await Tone.Offline(({ transport }) => {
         const offlinePlayers = new Tone.Players({
-          urls: {
-            Kick: '/samples/kick.wav', Snare: '/samples/snare.wav', 'Hi-Hat': '/samples/hihat.wav',
-            Clap: '/samples/clap.wav', Cowbell: '/samples/cowbell.wav',
-          },
-          baseUrl: '/',
+          urls: SAMPLE_URLS,
         }).toDestination();
 
-        const loop = new Tone.Sequence(
+        new Tone.Sequence(
           (time, step) => {
             grid.forEach((track, trackIndex) => {
               if (track[step]) {
@@ -180,7 +180,7 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
         transport.start();
       }, DURATION_SECONDS);
 
-      const wavBlob = audioBufferToWav(buffer);
+      const wavBlob = audioBufferToWav(new Tone.ToneAudioBuffer(buffer));
       onExport(wavBlob);
 
     } catch (error) {
@@ -188,7 +188,7 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
     } finally {
       setIsRendering(false);
     }
-  }, [isLoaded, players, grid, isPlaying, onExport]);
+  }, [isLoaded, grid, isPlaying, onExport]);
 
   return (
     <div className="bg-black/30 p-2 md:p-6 rounded-lg shadow-lg border border-cyber-orange/30 w-full">

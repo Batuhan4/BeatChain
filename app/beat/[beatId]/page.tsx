@@ -7,16 +7,9 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 
 import { contractConfig } from '../../../lib/contract';
 import { Address } from 'viem';
 
-// --- Types ---
-enum BeatStatus { InProgress, Completed }
-type Beat = {
-  id: bigint;
-  status: BeatStatus;
-  contributors: Address[];
-  segmentCIDs: string[];
-  segmentCount: number;
-  isMinted: boolean;
-};
+import { BeatStatus, BeatData } from '../../../lib/types';
+
+type BeatTuple = [bigint, BeatStatus, Address[], string[], number, boolean];
 
 const BeatPage = () => {
   const params = useParams();
@@ -26,10 +19,10 @@ const BeatPage = () => {
 
   // --- Contract Hooks ---
   const { data: beatData, isLoading: isReading, error: readError } = useReadContract({
-    ...contractConfig,
+    address: contractConfig.address,
+    abi: contractConfig.abi,
     functionName: 'beats',
     args: [beatId],
-    watch: true,
   });
 
   const { data: hash, error: writeError, isPending, writeContract } = useWriteContract();
@@ -38,13 +31,13 @@ const BeatPage = () => {
     useWaitForTransactionReceipt({ hash });
 
   // Manually construct the Beat object from the returned tuple
-  const beat: Beat | null = beatData ? {
-    id: (beatData as any[])[0],
-    status: (beatData as any[])[1],
-    contributors: (beatData as any[])[2],
-    segmentCIDs: (beatData as any[])[3],
-    segmentCount: (beatData as any[])[4],
-    isMinted: (beatData as any[])[5],
+  const beat: BeatData | null = beatData ? {
+    id: (beatData as BeatTuple)[0],
+    status: (beatData as BeatTuple)[1],
+    contributors: (beatData as BeatTuple)[2],
+    segmentCIDs: (beatData as BeatTuple)[3],
+    segmentCount: (beatData as BeatTuple)[4],
+    isMinted: (beatData as BeatTuple)[5],
   } : null;
 
   // --- Event Handlers ---
@@ -110,7 +103,7 @@ const BeatPage = () => {
     return (
       <div className="text-center p-10 text-red-500">
         Error loading beat. It may not exist.
-        <p className="text-sm text-gray-500 mt-2">{readError?.shortMessage}</p>
+        <p className="text-sm text-gray-500 mt-2">{readError?.message}</p>
       </div>
     );
   }
@@ -166,7 +159,7 @@ const BeatPage = () => {
         {writeError && (
           <div className="text-red-500 mt-4 bg-red-500/10 p-3 rounded-md max-w-md mx-auto">
             <p className="font-bold">Error:</p>
-            <p className="text-sm">{writeError.shortMessage || writeError.message}</p>
+            <p className="text-sm">{writeError.message}</p>
           </div>
         )}
       </div>

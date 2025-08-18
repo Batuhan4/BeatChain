@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-async function getResponse(req: NextRequest): Promise<NextResponse> {
+async function getResponse(): Promise<NextResponse> {
   const { NEXT_PUBLIC_URL } = process.env;
   
   // TODO: This could be dynamic based on a specific beatId
@@ -29,8 +29,8 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
   `);
 }
 
-export async function POST(req: NextRequest): Promise<Response> {
-  return getResponse(req);
+export async function POST(): Promise<Response> {
+  return getResponse();
 }
 
 export const dynamic = 'force-dynamic';

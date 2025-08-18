@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Sequencer from '../components/Sequencer';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { contractConfig } from '../../lib/contract';
+import { decodeEventLog } from 'viem';
 
 const StartBeatPage = () => {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -13,16 +14,37 @@ const StartBeatPage = () => {
 
   const { data: hash, error, isPending, writeContract } = useWriteContract();
 
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = 
-    useWaitForTransactionReceipt({ 
-      hash, 
-      onSuccess(data) {
-        console.log('Transaction confirmed:', data);
-        // TODO: Parse the event log to get the new beatId
-        const newBeatId = 1; // Placeholder
-        router.push(`/beat/${newBeatId}`);
-      },
-    });
+  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed } = 
+    useWaitForTransactionReceipt({ hash });
+
+  useEffect(() => {
+    if (isConfirmed && receipt) {
+      console.log('Transaction confirmed:', receipt);
+      // Parse the event log to get the new beatId
+      try {
+        const beatStartedEvent = receipt.logs
+          .map(log => {
+            try {
+              return decodeEventLog({
+                abi: contractConfig.abi,
+                data: log.data,
+                topics: log.topics,
+              });
+            } catch {
+              return null;
+            }
+          })
+          .find(event => event?.eventName === 'BeatStarted');
+
+        if (beatStartedEvent) {
+          const newBeatId = (beatStartedEvent.args as { beatId: bigint }).beatId;
+          router.push(`/beat/${newBeatId}`);
+        }
+      } catch (e) {
+        console.error('Error parsing event log:', e);
+      }
+    }
+  }, [isConfirmed, receipt, router]);
 
   const handleExportedAudio = (blob: Blob) => {
     console.log('Received exported audio blob:', blob);
@@ -58,7 +80,7 @@ const StartBeatPage = () => {
 
     } catch (uploadError) {
       console.error(uploadError);
-      alert(`Error uploading to IPFS: ${uploadError.message}`);
+      alert(`Error uploading to IPFS: ${(uploadError as Error).message}`);
       setIsUploading(false);
       return;
     } finally {
@@ -101,7 +123,7 @@ const StartBeatPage = () => {
         {error && (
           <div className="text-red-500 mt-4 bg-red-500/10 p-3 rounded-md">
             <p className="font-bold">Error:</p>
-            <p className="text-sm">{error.shortMessage || error.message}</p>
+            <p className="text-sm">{error.message}</p>
           </div>
         )}
       </div>

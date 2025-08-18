@@ -4,13 +4,12 @@ const path = require('path');
 
 function findImports(importPath) {
   const remappings = [
-    '@openzeppelin/=node_modules/@openzeppelin/',
+    ['@openzeppelin/', 'node_modules/@openzeppelin/'],
   ];
 
-  for (const remapping of remappings) {
-    const [prefix, target] = remapping.split('=');
+  for (const [prefix, target] of remappings) {
     if (importPath.startsWith(prefix)) {
-      const resolvedPath = path.resolve(__dirname, '..', target, importPath.substring(prefix.length));
+      const resolvedPath = path.join(__dirname, '..', target, importPath.substring(prefix.length));
       if (fs.existsSync(resolvedPath)) {
         return { contents: fs.readFileSync(resolvedPath, 'utf8') };
       }
