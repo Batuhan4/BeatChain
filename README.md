@@ -6,6 +6,8 @@
 
 Our vision is to create a fully on-chain creative protocol where digital music is collaboratively built, verifiably owned, and seamlessly shared.
 
+🏆 BeatChain took 1st place at the [Ankara | Base Mini-App Hyperthon](https://luma.com/fjn8xpmt)! 🚀
+
 ## Screenshot
 
 ![BeatChain Screenshot](./example/Screenshot%20from%202025-08-17%2020-55-06.png)
