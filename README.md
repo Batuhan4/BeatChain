@@ -1,12 +1,12 @@
-# BeatChain 🎵⛓️
+# 🏆 BeatChain took 1st place at the [Ankara | Base Mini-App Hyperthon](https://luma.com/fjn8xpmt)! 🚀
+
+## BeatChain 🎵⛓️
 
 ![BeatChain Logo](./public/logo.png)
 
 **BeatChain** is a decentralized and collaborative music protocol built on Farcaster and the Base blockchain. It transforms music creation into a social, sequential, and ownable experience. Users collaboratively build 12-second musical tracks ("Beats") by adding 4-second layers. Each contribution is recorded on-chain, and the final, completed Beat can be minted as a permanent, co-authored NFT.
 
 Our vision is to create a fully on-chain creative protocol where digital music is collaboratively built, verifiably owned, and seamlessly shared.
-
-🏆 BeatChain took 1st place at the [Ankara | Base Mini-App Hyperthon](https://luma.com/fjn8xpmt)! 🚀
 
 ## Screenshot
 
