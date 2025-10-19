@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import pinataSDK from '@pinata/sdk';
 import ffmpeg from 'fluent-ffmpeg';
-import { Readable } from 'stream';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';

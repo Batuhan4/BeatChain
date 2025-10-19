@@ -7,6 +7,7 @@ import { contractConfig } from '../../lib/contract';
 import { Address } from 'viem';
 
 import { BeatStatus, BeatData } from '../../lib/types';
+import WalletConnectButton from '../components/WalletConnectButton';
 
 type BeatTuple = [bigint, BeatStatus, Address[], string[], number, boolean];
 
@@ -80,11 +81,16 @@ const TracksPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-cyber-orange mb-2">All Beats</h1>
-        <p className="text-lg text-gray-400">
-          Explore all on-chain beats. Click one to contribute or mint.
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div className="text-center md:text-left">
+          <h1 className="text-4xl md:text-5xl font-bold text-cyber-orange mb-2">All Beats</h1>
+          <p className="text-lg text-gray-400">
+            Explore all on-chain beats. Click one to contribute or mint.
+          </p>
+        </div>
+        <div className="flex justify-center md:justify-end">
+          <WalletConnectButton />
+        </div>
       </div>
 
       {beatIds.length > 0 ? (
