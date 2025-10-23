@@ -83,6 +83,7 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isRendering, setIsRendering] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   const players = useRef<Tone.Players | null>(null);
   const sequence = useRef<Tone.Sequence | null>(null);
@@ -91,6 +92,14 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
   useEffect(() => {
     gridRef.current = grid;
   }, [grid]);
+
+  useEffect(() => {
+    return () => {
+      if (downloadUrl) {
+        URL.revokeObjectURL(downloadUrl);
+      }
+    };
+  }, [downloadUrl]);
 
   useEffect(() => {
     players.current = new Tone.Players({
@@ -159,14 +168,28 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
     }
 
     try {
+      const gridSnapshot = grid.map((track) => [...track]);
+      const livePlayers = players.current;
+
       const buffer = await Tone.Offline(({ transport }) => {
-        const offlinePlayers = new Tone.Players({
-          urls: SAMPLE_URLS,
-        }).toDestination();
+        if (!livePlayers) {
+          throw new Error('Players not initialized');
+        }
+
+        const loadedBuffers = SAMPLE_NAMES.reduce<Record<string, Tone.ToneAudioBuffer>>((acc, sampleName) => {
+          const player = livePlayers.player(sampleName);
+          if (!player.buffer || !player.buffer.loaded) {
+            throw new Error(`Sample ${sampleName} failed to load`);
+          }
+          acc[sampleName] = player.buffer;
+          return acc;
+        }, {});
+
+        const offlinePlayers = new Tone.Players(loadedBuffers).toDestination();
 
         new Tone.Sequence(
           (time, step) => {
-            grid.forEach((track, trackIndex) => {
+            gridSnapshot.forEach((track, trackIndex) => {
               if (track[step]) {
                 const sampleName = SAMPLE_NAMES[trackIndex];
                 offlinePlayers.player(sampleName).start(time);
@@ -181,6 +204,12 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
       }, DURATION_SECONDS);
 
       const wavBlob = audioBufferToWav(new Tone.ToneAudioBuffer(buffer));
+      setDownloadUrl((previousUrl) => {
+        if (previousUrl) {
+          URL.revokeObjectURL(previousUrl);
+        }
+        return URL.createObjectURL(wavBlob);
+      });
       onExport(wavBlob);
 
     } catch (error) {
@@ -240,6 +269,17 @@ const Sequencer = ({ onExport }: { onExport: (audioBlob: Blob) => void }) => {
           {isRendering ? 'Rendering...' : 'Export WAV'}
         </button>
       </div>
+      {downloadUrl && (
+        <div className="mt-4 text-center">
+          <a
+            href={downloadUrl}
+            download="beat-segment.wav"
+            className="inline-block bg-cyber-blue/80 hover:bg-cyber-blue text-black font-semibold py-2 px-6 rounded-md transition-colors"
+          >
+            Download Last Export
+          </a>
+        </div>
+      )}
       {!isLoaded && <p className="text-center mt-4 text-gray-400 animate-pulse">Loading Samples...</p>}
     </div>
   );
