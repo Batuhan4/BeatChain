@@ -45,6 +45,36 @@ const StartBeatPage = () => {
       console.log('Transaction confirmed:', startReceipt);
       // Parse the event log to get the new beatId
       try {
+        const extractBeatIdFromEventArgs = (args: unknown): bigint | null => {
+          if (Array.isArray(args)) {
+            const firstArg = args[0];
+            if (typeof firstArg === 'bigint') return firstArg;
+            if (typeof firstArg === 'string') {
+              try {
+                return BigInt(firstArg);
+              } catch {
+                return null;
+              }
+            }
+            return null;
+          }
+          if (args && typeof args === 'object') {
+            const record = args as Record<string, unknown>;
+            if ('beatId' in record) {
+              const potentialBeatId = record.beatId;
+              if (typeof potentialBeatId === 'bigint') return potentialBeatId;
+              if (typeof potentialBeatId === 'string') {
+                try {
+                  return BigInt(potentialBeatId);
+                } catch {
+                  return null;
+                }
+              }
+            }
+          }
+          return null;
+        };
+
         const beatStartedEvent = startReceipt.logs
           .map(log => {
             try {
@@ -60,8 +90,12 @@ const StartBeatPage = () => {
           .find(event => event?.eventName === 'BeatStarted');
 
         if (beatStartedEvent) {
-          const newBeatId = (beatStartedEvent.args as { beatId: bigint }).beatId;
-          router.push(`/beat/${newBeatId}`);
+          const newBeatId = extractBeatIdFromEventArgs(beatStartedEvent.args);
+          if (newBeatId !== null) {
+            router.push(`/beat/${newBeatId}`);
+          } else {
+            console.warn('BeatStarted event found, but beatId could not be parsed from args:', beatStartedEvent.args);
+          }
         }
       } catch (e) {
         console.error('Error parsing event log:', e);
