@@ -6,7 +6,12 @@ import Sequencer from '../components/Sequencer';
 import { useWriteContract, useWaitForTransactionReceipt, usePublicClient } from 'wagmi';
 import { contractConfig } from '../../lib/contract';
 import { BeatStatus } from '../../lib/types';
-import { decodeEventLog, Address } from 'viem';
+import { decodeEventLog, Address, DecodeEventLogReturnType } from 'viem';
+
+type BeatStartedEvent = DecodeEventLogReturnType<typeof contractConfig.abi, 'BeatStarted'>;
+
+const isBeatStartedEvent = (event: BeatStartedEvent | null): event is BeatStartedEvent =>
+  event !== null;
 
 const StartBeatPage = () => {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -45,22 +50,23 @@ const StartBeatPage = () => {
       console.log('Transaction confirmed:', startReceipt);
       // Parse the event log to get the new beatId
       try {
-        const beatStartedEvent = startReceipt.logs
-          .map(log => {
-            try {
-              return decodeEventLog({
-                abi: contractConfig.abi,
-                data: log.data,
-                topics: log.topics,
-              });
-            } catch {
-              return null;
-            }
-          })
-          .find(event => event?.eventName === 'BeatStarted');
+        const decodedLogs: Array<BeatStartedEvent | null> = startReceipt.logs.map(log => {
+          try {
+            return decodeEventLog({
+              abi: contractConfig.abi,
+              data: log.data,
+              topics: log.topics,
+              eventName: 'BeatStarted',
+            });
+          } catch {
+            return null;
+          }
+        });
 
-        if (beatStartedEvent) {
-          const newBeatId = (beatStartedEvent.args as { beatId: bigint }).beatId;
+        const beatStartedEvent = decodedLogs.find(isBeatStartedEvent);
+
+        if (beatStartedEvent && beatStartedEvent.args && 'beatId' in beatStartedEvent.args) {
+          const newBeatId = beatStartedEvent.args.beatId as bigint;
           router.push(`/beat/${newBeatId}`);
         }
       } catch (e) {

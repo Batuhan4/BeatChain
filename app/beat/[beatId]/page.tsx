@@ -9,7 +9,55 @@ import { Address } from 'viem';
 
 import { BeatStatus, BeatData } from '../../../lib/types';
 
-type BeatTuple = [bigint, BeatStatus, Address[], string[], number, boolean];
+type BeatRecord = Record<string | number, unknown>;
+
+const isObject = (value: unknown): value is BeatRecord =>
+  typeof value === 'object' && value !== null;
+
+const toStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === 'string');
+  }
+  if (isObject(value)) {
+    return Object.values(value).filter((entry): entry is string => typeof entry === 'string');
+  }
+  return [];
+};
+
+const toAddressArray = (value: unknown): Address[] => toStringArray(value) as Address[];
+
+const pickField = <T,>(source: BeatRecord, key: string, index: number): T | undefined => {
+  if (source[key] !== undefined) {
+    return source[key] as T;
+  }
+  const numericKey = index.toString();
+  if (source[numericKey] !== undefined) {
+    return source[numericKey] as T;
+  }
+  return undefined;
+};
+
+const normalizeBeatData = (data: unknown): BeatData | null => {
+  if (!isObject(data)) {
+    return null;
+  }
+
+  const id = pickField<bigint>(data, 'id', 0) ?? 0n;
+  const statusRaw = pickField<number | bigint>(data, 'status', 1) ?? 0;
+  const contributorsRaw = pickField<unknown>(data, 'contributors', 2);
+  const segmentCIDsRaw = pickField<unknown>(data, 'segmentCIDs', 3);
+  const segmentCountRaw = pickField<number | bigint>(data, 'segmentCount', 4) ?? 0;
+  const isMintedRaw = pickField<boolean>(data, 'isMinted', 5) ?? false;
+
+  return {
+    id,
+    status: Number(statusRaw) as BeatStatus,
+    contributors: toAddressArray(contributorsRaw),
+    segmentCIDs: toStringArray(segmentCIDsRaw),
+    segmentCount: Number(segmentCountRaw),
+    isMinted: Boolean(isMintedRaw),
+  };
+};
 
 const BeatPage = () => {
   const params = useParams();
@@ -31,14 +79,7 @@ const BeatPage = () => {
     useWaitForTransactionReceipt({ hash });
 
   // Manually construct the Beat object from the returned tuple
-  const beat: BeatData | null = beatData ? {
-    id: (beatData as BeatTuple)[0],
-    status: (beatData as BeatTuple)[1],
-    contributors: (beatData as BeatTuple)[2],
-    segmentCIDs: (beatData as BeatTuple)[3],
-    segmentCount: (beatData as BeatTuple)[4],
-    isMinted: (beatData as BeatTuple)[5],
-  } : null;
+  const beat = normalizeBeatData(beatData);
 
   // --- Event Handlers ---
   const handleExportedAudio = (blob: Blob) => {
